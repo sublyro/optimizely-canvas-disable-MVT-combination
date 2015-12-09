@@ -1,0 +1,28 @@
+.combination {
+	padding: 5px 10px
+}
+
+.combination label, .mvt-experiment h2 {
+	padding-left: 10px
+}
+
+.mvt-experiment {
+	padding-bottom: 10px;
+	padding-top: 10px;
+	margin-bottom: 30px;
+    border-bottom: 2px;
+    border-style: groove;
+    border-bottom-color: lightgrey;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+.lego-button {
+	margin: 10px 10px;
+}
+
+#canvas-content {
+	margin-left: 20px;
+    margin-right: 20px;
+}

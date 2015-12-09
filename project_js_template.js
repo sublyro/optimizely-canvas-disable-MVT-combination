@@ -1,8 +1,8 @@
-//** _START_CANVAS_MVT_COMBINATION_V_1 **/
-//** WARNING: DO NOT MODIFY BELOW THIS LINE **/
+/**_START_CANVAS_MVT_COMBINATION_V_1**/
+/**WARNING: DO NOT MODIFY BELOW THIS LINE**/
 window.optly_mvt = [];
-//window.optly_mvt.push({'id':4053480045, 'disabled_combinations':['4055370049 4051590088','4042040132 4047950063']});
-window.optly_mvt.push(__MVT_CONFIG__);
+window.optly_mvt.push([__MVT_CONFIG__]);
+window.optly_mvt = window.optly_mvt[0];
 
 if (typeof DATA != 'undefined') {
   (function (DATA) {
@@ -13,7 +13,7 @@ if (typeof DATA != 'undefined') {
       var section_ids = DATA.experiments[obj.id].section_ids;
       obj.sections = [];
       obj.bucket = [];
-      for (i = 0; i < section_ids.length; i++) {
+      for (var i = 0; i < section_ids.length; i++) {
         var sid = section_ids[i];
         obj.sections.push(DATA.sections[sid].variation_ids);
         var r = Math.floor((Math.random() * DATA.sections[sid].variation_ids.length));
@@ -23,7 +23,7 @@ if (typeof DATA != 'undefined') {
 
     function isValidBucket(obj) {
       console.log("Is valid bucket? " + obj.id);
-      for (i = 0; i < obj.disabled_combinations.length; i++) {
+      for (var i = 0; i < obj.disabled_combinations.length; i++) {
         if (obj.disabled_combinations[i] == obj.bucket.join(" ")) {
           console.log("Invalid combination " + obj.bucket.join(" "));
           return false;
@@ -34,19 +34,19 @@ if (typeof DATA != 'undefined') {
     }
 
     function bucketMVT(obj) {
-      if (document.cookie.indexOf(obj.id) == -1) {
+      //if (document.cookie.indexOf(obj.id) == -1) {
         var ready = false;
         while (ready === false) {
           bucketVisitor(obj);
           var isValid = isValidBucket(obj);
           if (isValid === true) {
             ready = true;
-            for (i = 0; i < obj.bucket.length; i++) {
+            for (var i = 0; i < obj.bucket.length; i++) {
               window['optimizely'].push(["bucketVisitor", obj.id, obj.bucket[i]]);
             }
           }
         } 
-      } // else user is already bucketed
+      //} // else user is already bucketed
     }
 
     // disable specified MVT combinations for the given experiment
@@ -58,4 +58,4 @@ if (typeof DATA != 'undefined') {
 
   })(DATA);
 }
-//** _END_CANVAS_MVT_COMBINATION_V_1 **/
+/**_END_CANVAS_MVT_COMBINATION_V_1**/

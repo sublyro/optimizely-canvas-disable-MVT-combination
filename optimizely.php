@@ -40,6 +40,10 @@ class Optimizely {
 	 */
 	protected $api_token;
 	/**
+	 * Optimizely token type
+	 */
+	protected $token_type;
+	/**
 	 * base url for API
 	 */
 	protected $api_url = 'https://www.optimizelyapis.com/experiment/v1/';
@@ -49,7 +53,7 @@ class Optimizely {
 	public $date_format = 'Y-m-d\TH:i:s\Z';
 	/**
 	 * Setup the object
-	 */
+	 */ 
 	public function __construct( $api_token ) {
 		$this->api_token = $api_token;
 	}// end __construct
@@ -58,7 +62,10 @@ class Optimizely {
 	 */
 	public function set_api_token( $api_token ) {
 		$this->api_token = $api_token;
-	}// end set_api_token
+	}
+	public function set_token_type($token_type) {
+		$this->token_type = $token_type;
+	}
 	/**
 	 * Uses curl to hit hit the API, override this function to use a different method
 	 */
@@ -74,10 +81,17 @@ class Optimizely {
 		curl_setopt( $c, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer );
 		curl_setopt( $c, CURLOPT_HEADER, FALSE );
 		curl_setopt( $c, CURLOPT_RETURNTRANSFER, TRUE );
-		curl_setopt( $c, CURLOPT_HTTPHEADER, array(
-			'Token: ' . $this->api_token,
-			'Content-Type: application/json'
-		) );
+		if ($this->token_type == null) {
+			curl_setopt( $c, CURLOPT_HTTPHEADER, array(
+				'Token: ' . $this->api_token,
+				'Content-Type: application/json'
+			));
+		} else if ($this->token_type == "bearer") {
+			curl_setopt( $c, CURLOPT_HTTPHEADER, array(
+				'Authorization: Bearer ' . $this->api_token,
+				'Content-Type: application/json'
+			));
+		}
 		$url = $this->api_url . $options['function'];
 		switch ( $options['method'] )
 		{
