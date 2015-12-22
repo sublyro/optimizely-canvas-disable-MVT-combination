@@ -69,7 +69,59 @@ class Optimizely {
 	/**
 	 * Uses curl to hit hit the API, override this function to use a different method
 	 */
-	protected function request( $options ) {
+	protected function request($options) {
+
+		$header = "Token: " .$this->api_token ."\r\nContent-Type: application/json";
+		if ($this->token_type == "bearer") {
+			$header = "Authorization: Bearer " .$this->api_token ."\r\nContent-Type: application/json";
+		}
+
+		switch ( $options['method'] ) {
+			case 'POST':
+				debug("NOT IMPLEMENTED YET");
+				exit();
+				break;
+			case 'DELETE':
+				debug("NOT IMPLEMENTED YET");
+				exit();
+				break;
+			case 'PUT':
+
+				$postdata = json_encode($options['data']);
+
+				$header = "Token: " .$this->api_token ."\r\nContent-Length: " .strlen($postdata) ."\r\nContent-type: application/json";
+				if ($this->token_type == "bearer") {
+					$header = "Authorization: Bearer " .$this->api_token ."\r\nContent-Length: " .strlen($postdata) ."\r\nContent-type: application/json";
+				}
+				
+				$context = [
+					'http' => [
+					    'method' => 'PUT',
+					    'header' => $header,
+					    'content' => $postdata,
+					]
+				];
+
+				break;
+			case 'GET':
+				$context = [
+					'http' => [
+					    'method' => 'GET',
+					    'header' => $header,
+					]
+				];
+				break;
+		}
+
+		$context = stream_context_create($context);
+
+		$url = $this->api_url . $options['function'];
+		$result = file_get_contents($url, false, $context);
+
+		return json_decode($result);
+	}
+
+	protected function xrequest( $options ) {
 		if ( ! $this->api_token ) {
 			return FALSE;
 		}//end if
@@ -112,6 +164,7 @@ class Optimizely {
 		}//END switch
 		curl_setopt( $c, CURLOPT_URL, $url );
 		curl_setopt($c, CURLOPT_VERBOSE, true);
+		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
 		$response = curl_exec( $c );
 		// the following variables are primarily for debugging purposes
 		$this->request_http_code = curl_getinfo( $c, CURLINFO_HTTP_CODE );
@@ -135,7 +188,7 @@ class Optimizely {
 	 */
 	public function get_project( $project_id ) {
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/',
+			'function' => 'projects/' . trim($project_id) . '/',
 			'method' => 'GET',
 		) );
 	}// end get_project
@@ -169,7 +222,7 @@ class Optimizely {
 	 */
 	public function update_project( $project_id, $options ) {
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ),
+			'function' => 'projects/' . trim($project_id),
 			'method' => 'PUT',
 			'data' => $options,
 		) );
@@ -179,7 +232,7 @@ class Optimizely {
 	 */
 	public function get_experiments( $project_id ) {
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/experiments/',
+			'function' => 'projects/' . trim($project_id) . '/experiments/',
 			'method' => 'GET',
 		) );
 	}// end get_experiments
@@ -188,7 +241,7 @@ class Optimizely {
 	 */
 	public function get_experiment( $experiment_id ) {
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ) . '/',
+			'function' => 'experiments/' . trim($experiment_id) . '/',
 			'method' => 'GET',
 		) );
 	}// end get_experiment
@@ -204,7 +257,7 @@ class Optimizely {
 			$extra = '?' . http_build_query( $options );
 		}//end if
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ) . '/results' . $extra,
+			'function' => 'experiments/' . trim($experiment_id) . '/results' . $extra,
 			'method' => 'GET',
 		) );
 	}// end get_experiment_results
@@ -217,7 +270,7 @@ class Optimizely {
 			return FALSE;
 		}//end if
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/experiments/',
+			'function' => 'projects/' . trim($project_id) . '/experiments/',
 			'method' => 'POST',
 			'data' => $options,
 		) );
@@ -227,7 +280,7 @@ class Optimizely {
 	 */
 	public function update_experiment( $experiment_id, $options ) {
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ),
+			'function' => 'experiments/' . trim($experiment_id),
 			'method' => 'PUT',
 			'data' => $options,
 		) );
@@ -240,7 +293,7 @@ class Optimizely {
 			return $this->update_experiment( $experiment_id, array( 'status' => 'Archived' ) );
 		}//end if
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ),
+			'function' => 'experiments/' . trim($experiment_id),
 			'method' => 'DELETE',
 		) );
 	}// end delete_experiment
@@ -250,7 +303,7 @@ class Optimizely {
 	 */
 	public function get_schedules( $experiment_id ) {
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ) . '/schedules',
+			'function' => 'experiments/' . trim($experiment_id) . '/schedules',
 			'method' => 'GET',
 		) );
 	}// end get_schedules
@@ -259,7 +312,7 @@ class Optimizely {
 	 */
 	public function get_schedule( $schedule_id ) {
 		return $this->request( array(
-			'function' => 'schedules/' . abs( intval( $schedule_id ) ),
+			'function' => 'schedules/' . trim($schedule_id),
 			'method' => 'GET',
 		) );
 	}// end get_schedule
@@ -273,7 +326,7 @@ class Optimizely {
 			return FALSE;
 		}//end if
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ) . '/schedules',
+			'function' => 'experiments/' . trim($experiment_id) . '/schedules',
 			'method' => 'POST',
 			'data' => $options,
 		) );
@@ -288,7 +341,7 @@ class Optimizely {
 			return FALSE;
 		}//end if
 		return $this->request( array(
-			'function' => 'schedules/' . abs( intval( $schedule_id ) ),
+			'function' => 'schedules/' . trim($schedule_id),
 			'method' => 'PUT',
 			'data' => $options,
 		) );
@@ -298,7 +351,7 @@ class Optimizely {
 	 */
 	public function delete_schedule( $schedule_id ) {
 		return $this->request( array(
-			'function' => 'schedules/' . abs( intval( $schedule_id ) ),
+			'function' => 'schedules/' . trim($schedule_id),
 			'method' => 'DELETE',
 		) );
 	}// end update_schedule
@@ -307,7 +360,7 @@ class Optimizely {
 	 */
 	public function get_variations( $experiment_id ) {
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ) . '/variations/',
+			'function' => 'experiments/' . trim($experiment_id) . '/variations/',
 			'method' => 'GET',
 		) );
 	}// end get_variations
@@ -316,7 +369,7 @@ class Optimizely {
 	 */
 	public function get_variation( $variation_id ) {
 		return $this->request( array(
-			'function' => 'variations/' . abs( intval( $variation_id ) ),
+			'function' => 'variations/' . trim($variation_id),
 			'method' => 'GET',
 		) );
 	}// end get_variation
@@ -328,7 +381,7 @@ class Optimizely {
 			return FALSE;
 		}//end if
 		return $this->request( array(
-			'function' => 'experiments/' . abs( intval( $experiment_id ) ) . '/variations',
+			'function' => 'experiments/' . trim($experiment_id) . '/variations',
 			'method' => 'POST',
 			'data' => $options,
 		) );
@@ -338,7 +391,7 @@ class Optimizely {
 	 */
 	public function update_variation( $variation_id, $options ) {
 		return $this->request( array(
-			'function' => 'variations/' . abs( intval( $variation_id ) ),
+			'function' => 'variations/' . trim($variation_id),
 			'method' => 'PUT',
 			'data' => $options,
 		) );
@@ -348,7 +401,7 @@ class Optimizely {
 	 */
 	public function delete_variation( $variation_id ) {
 		return $this->request( array(
-			'function' => 'variations/' . abs( intval( $variation_id ) ),
+			'function' => 'variations/' . trim($variation_id),
 			'method' => 'DELETE',
 		) );
 	}// end delete_variation
@@ -357,7 +410,7 @@ class Optimizely {
 	 */
 	public function get_goals( $project_id ) {
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/goals/',
+			'function' => 'projects/' . trim($project_id) . '/goals/',
 			'method' => 'GET',
 		) );
 	}// end get_goals
@@ -366,7 +419,7 @@ class Optimizely {
 	 */
 	public function get_goal( $goal_id ) {
 		return $this->request( array(
-			'function' => 'goals/' . abs( intval( $goal_id ) ),
+			'function' => 'goals/' . trim($goal_id),
 			'method' => 'GET',
 		) );
 	}// end get_goal
@@ -413,7 +466,7 @@ class Optimizely {
 				return FALSE;
 		}// end switch
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/goals/',
+			'function' => 'projects/' . trim($project_id) . '/goals/',
 			'method' => 'POST',
 			'data' => $options,
 		) );
@@ -423,7 +476,7 @@ class Optimizely {
 	 */
 	public function update_goal( $goal_id, $options ) {
 		return $this->request( array(
-			'function' => 'goals/' . abs( intval( $goal_id ) ),
+			'function' => 'goals/' . trim($goal_id),
 			'method' => 'PUT',
 			'data' => $options,
 		) );
@@ -434,7 +487,7 @@ class Optimizely {
 	 */
 	public function delete_goal( $goal_id ) {
 		return $this->request( array(
-			'function' => 'goals/' . abs( intval( $goal_id ) ),
+			'function' => 'goals/' . trim($goal_id),
 			'method' => 'DELETE',
 		) );
 	}// end delete_goal
@@ -466,7 +519,7 @@ class Optimizely {
 	 */
 	public function get_audiences( $project_id ) {
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/audiences/',
+			'function' => 'projects/' . trim($project_id) . '/audiences/',
 			'method' => 'GET',
 		) );
 	}// end get_audiences
@@ -487,7 +540,7 @@ class Optimizely {
 			return FALSE;
 		}// end if
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/audiences/',
+			'function' => 'projects/' . trim($project_id) . '/audiences/',
 			'method' => 'POST',
 			'data' => $options,
 		) );
@@ -507,7 +560,7 @@ class Optimizely {
 	 */
 	public function get_dimensions( $project_id ) {
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/dimensions/',
+			'function' => 'projects/' . trim($project_id) . '/dimensions/',
 			'method' => 'GET',
 		) );
 	}// end get_dimensions
@@ -528,7 +581,7 @@ class Optimizely {
 			return FALSE;
 		}// end if
 		return $this->request( array(
-			'function' => 'projects/' . abs( intval( $project_id ) ) . '/dimensions/',
+			'function' => 'projects/' . trim($project_id) . '/dimensions/',
 			'method' => 'POST',
 			'data' => $options,
 		) );

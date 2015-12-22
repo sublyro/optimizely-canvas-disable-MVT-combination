@@ -1,8 +1,5 @@
 <?php
 
-$START_TAG = "\/\*\*_START_" .$canvas->get_app_id() ."_" .$canvas->get_app_version() ."\*\*\/";
-$END_TAG = "\/\*\*_END_" .$canvas->get_app_id() ."_" .$canvas->get_app_version() ."\*\*\/";
-
 $all_sections = array();
 $all_combinations = array();
 $all_experiments = array();
@@ -15,36 +12,38 @@ $optimizely = $canvas->get_optimizely();
 $project = $optimizely->get_project($canvas->get_project_id());
 $experiments = $optimizely->get_experiments($canvas->get_project_id());
 
+
 if ($project == null || property_exists($project, 'status')) {
 	$error_message = "An error occured while loading the app! Please check the config";
 } else {
 foreach ($experiments as $experiment) {
 	if ($experiment->experiment_type == "multivariate") {   
-		$all_experiments[$experiment->id] = $experiment;
+		$all_experiments[trim($experiment->id)] = $experiment;
 
         $variations = $optimizely->get_variations($experiment->id);
 		$sections = array();
 		foreach ($variations as $variation) {
-
 			if ($variation->is_paused != 1) {
-				if (array_key_exists($variation->section_id, $sections) != 1) {
-					$sections[$variation->section_id] = array();
+				
+				if (array_key_exists(trim($variation->section_id), $sections) != 1) {
+					$sections[trim($variation->section_id)] = array();
 				}
-				array_push($sections[$variation->section_id], $variation);
-				$all_sections[$variation->id] = $variation;
+				array_push($sections[trim($variation->section_id)], $variation);
+				$all_sections[trim($variation->id)] = $variation;
 			}
 		}
 
 		$combinations = array();
 		getCombinations($sections, $combinations, null);
 
-		$all_combinations[$experiment->id] = $combinations;
+		$all_combinations[trim($experiment->id)] = $combinations;
 
     }
 }
 
 // the form was saved for we need to update the projectJS
-if (count($_POST) > 0) {
+if ((isset($_POST['action'])) && ($_POST['action'] == "save")) {
+//if (count($_POST) > 0 && ) {
 	// process the POST parameters
 	// the POST contains all the combination that are enabled
 	// go through all the possible combinations and see if they were submited
@@ -78,67 +77,51 @@ if (count($_POST) > 0) {
 	}
 	$pjs = $project->project_javascript;
 
-	replaceAppConfig($pjs, $new_code);
+	$canvas->replace_app_code($project, $new_code);
 
 	// get the project again with updated project JS
 	$project = $optimizely->get_project($canvas->get_project_id());
 }
 
 // show which combinations are disabled on the UI
-$existing_disabled_combinations = getExistingConfig($project);
+$existing_disabled_combinations = getExistingMVTConfig($canvas, $project);
+
+//disableCanvasApp($canvas, $project);
 }
+
 // ********************** END OF MAIN ***********************************
-
-
-function replaceAppConfig($pjs, $new_code) {
-	global $START_TAG, $END_TAG, $optimizely, $canvas;
-
-	preg_match("/" .$START_TAG ."(.*)" .$END_TAG ."/s", $pjs, $res);
-	if (count($res) == 0) {
-		// add the config at the bottom of project_js
-		$pjs .= "\n" .$new_code;
-	} else {
-		$pjs = preg_replace("/" .$START_TAG .".*" .$END_TAG ."/s", $new_code, $pjs);
-	}
-	$optimizely->update_project($canvas->get_project_id(), array("project_javascript" => $pjs));
-}
 
 
 function getCombinationName($sections, $code) {
 	$name = "";
 	$code = explode(" ", trim($code));
 	foreach ($code as $id) {
-		$name .= $sections[$id]->description .' ';
+		$name .= $sections[trim($id)]->description .' ';
 	}
 	return trim($name);
 }
 
-function getAppCode($pjs) {
-	global $START_TAG, $END_TAG;
-	preg_match("/" .$START_TAG ."(.*)" .$END_TAG ."/s", $pjs, $res);
-	if (count($res) == 0) {
-		return null;
+function getMVTConfig($canvas, $project) {
+	$app_code = $canvas->get_app_code($project);
+	if ($app_code == null) {
+		// no existing config. disable the app
+		$canvas->set_status(0);
 	}
-	return $res[0];
-}
-
-function getAppConfig($code) {
-	$app_code = getAppCode($code);
 	if ($app_code == null) return null;
 	preg_match("/optly_mvt.push\((.*)\);/i", $app_code, $res);
+	if (count($res) == 0) return null;
 	return json_decode($res[1]);
 }
 
 
-function getExistingConfig($project) {
+function getExistingMVTConfig($canvas, $project) {
 	$combinations = array();
-	$pjs = $project->project_javascript;
 
-	$match = getAppConfig($pjs);
+	$match = getMVTConfig($canvas, $project);
 	if ($match != null) {
 		foreach ($match as $experiment) {
 			foreach ($experiment->disabled_combinations as $combination) {
-				$combinations[$combination] = $combination;
+				$combinations[trim($combination)] = $combination;
 			}
 		}
 	}
@@ -204,14 +187,24 @@ if ($error_message != "") {
 ?>
 <div><?php echo $error_message ?></div>
 <?php } else { ?>
-<form id="mvt-app-form" method="POST">
+<?php if (!$canvas->is_enabled()) { ?>
 
+<br />
+<div class="attention background--warning">
+  This app is currently disabled. To enable it click on the "On" button in the sidebar
+</div>
+
+<?php } ?>
+
+
+<form id="mvt-app-form" method="POST">
+	<input type="hidden" name="action" id="action" value="save" />
   	<?php foreach($all_experiments as $experiment){ ?>
     <div class="mvt-experiment">
       <div class="experiment-id" id="<?php echo $experiment->id ?>">
         <h2><?php echo $experiment->description ?></h2></div>
-      <ul class="lego-input-list">
-        <?php foreach($all_combinations[$experiment->id] as $combination) { ?>
+      <ul class="input-list">
+        <?php foreach($all_combinations[trim($experiment->id)] as $combination) { ?>
           <div class="combination">
             <?php
 			    		$combination = trim($combination);
@@ -219,9 +212,12 @@ if ($error_message != "") {
 			    		if (compareCombinations($combination, $existing_disabled_combinations)) {
 			    			$checked = false;
 			    		} 
+			    		if (!$canvas->is_enabled()) {
+			    			$checked = true;
+			    		}
 			    	?>
               <li>
-                <input name="<?php echo $combination ?>" type="checkbox" <?php if ($checked==true) {echo( 'checked');} ?> />
+                <input name="<?php echo $combination ?>" type="checkbox" <?php if ($checked==true) {echo('checked');} ?> <?php if (!$canvas->is_enabled()) {echo('disabled');} ?> />
                 <label>
                   <?php echo getCombinationName($all_sections, $combination) ?>
                 </label>
@@ -229,7 +225,8 @@ if ($error_message != "") {
           </div>
           <?php } ?>
       </ul>
-      <button type="submit" class="lego-button lego-button--highlight" data-test-section="save-button"> Save </button>
+      <button type="submit" class="button button--highlight <?php if (!$canvas->is_enabled()) {echo('button--disabled');} ?>" data-test-section="save-button" <?php if (!$canvas->is_enabled()) {echo('disabled=\"disabled\"');} ?>> Save </button>
+
     </div>
     <?php
 		}

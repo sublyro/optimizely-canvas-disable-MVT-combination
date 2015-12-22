@@ -1,0 +1,15 @@
+application: canvas-mvt-combination
+version: 1
+runtime: php55
+api_version: 1
+
+handlers:
+
+- url: /css
+  static_dir: css
+
+- url: /js
+  static_dir: js
+
+- url: /.*
+  script: index.php

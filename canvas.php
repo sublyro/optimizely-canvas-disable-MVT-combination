@@ -1,7 +1,7 @@
 <?php include 'optimizely.php';?>
 <?php include 'canvas-log.php';?>
+<?php include 'canvas-helper.php';?>
 <?php
-
 
 Class Canvas {
 
@@ -27,45 +27,53 @@ Class Canvas {
 
 	private $project_id;
 
-	public function __construct() {
-		$this->readConfig();
+	private $status = 1; 
+
+	public function __construct($config) {
+		$this->readConfig($config);
 		
 		$params = $_GET;
 
 		if (!array_key_exists('signed_request', $params)) {
-			$this->error("Error: Canvas signed_request parameter is missing");
-			exit();
-		}
 
-		$signed_request = $params['signed_request'];
+			// O-Auth failed. Checked if we have a token and project_id in the config file
+			if ($this->token != null && $this->project_id != null) {
+				$this->optimizely = new Optimizely($this->token);
+			} else {
+				$this->error("Error: Canvas signed_request parameter is missing");
+				exit();
+			}
+		} else {
+			// O-AUTH
+			$signed_request = $params['signed_request'];
 
-		if ($signed_request == null) {
-			$this->error("Error: Canvas signed_request parameter is missing");
-			exit();
-		}
-		$signed_request = explode(".", $signed_request);
+			if ($signed_request == null) {
+				$this->error("Error: Canvas signed_request parameter is missing");
+				exit();
+			}
+			$signed_request = explode(".", $signed_request);
 
-		if (count($signed_request) != 2) {
-			$this->error("Error: Invalid Canvas signed_request parameter");
-			exit();
-		}
-
+			if (count($signed_request) != 2) {
+				$this->error("Error: Invalid Canvas signed_request parameter");
+				exit();
+			}
 		
-		// authorise the canvas app
-		if (!$this->authorize($signed_request)) {
-			$this->error("Error: The Canvas authentication failed. Please contact the App developer");
-			exit();
-		}
+			// authorise the canvas app
+			if (!$this->authorize($signed_request)) {
+				$this->error("Error: The Canvas authentication failed. Please contact the App developer");
+				http_response_code(401);
+				exit();
+			}
 
-		// initialise Optimizely
-		$this->optimizely = new Optimizely($this->token);
-		// make sure we set the token type to bearer
-		$this->optimizely->set_token_type($this->token_type);
+			// initialise Optimizely
+			$this->optimizely = new Optimizely($this->token);
+			// make sure we set the token type to bearer
+			$this->optimizely->set_token_type($this->token_type);
+		}
 		
 	}
 
 	private function authorize($signed_request) {
-
 		$hash = sha256Encode($signed_request[1], $this->private_key);
 		$hash = base64Encode($hash);
 
@@ -81,8 +89,8 @@ Class Canvas {
 		return true;
 	}
 
-	private function readConfig() {
-		$CONFIG = parse_ini_file($this->config_file);
+	private function readConfig($config) {
+		$CONFIG = $config->get();
 
 		if (!array_key_exists('SHOW_ERROR', $CONFIG)) {
 			$this->debug = false;
@@ -117,6 +125,28 @@ Class Canvas {
 			exit();
 		}
 		$this->private_key = $CONFIG['PRIVATE_KEY'];
+
+		if (array_key_exists('TOKEN', $CONFIG)) {
+			$this->token = $CONFIG['TOKEN'];
+		}
+
+		if (array_key_exists('PROJECT_ID', $CONFIG)) {
+			$this->project_id = $CONFIG['PROJECT_ID'];
+		}
+		
+	}
+
+	public function get_status() {
+		return $this->status;
+	}
+
+	public function is_enabled() {
+		if ($this->status == 1) return true;
+		return false;
+	}
+
+	public function set_status($status) {
+		$this->status = $status;
 	}
 
 	public function error($msg) {
@@ -156,30 +186,7 @@ Class Canvas {
 	}
 }
 
-
-$canvas = new Canvas();
-
 //-----------------------------------
-
-
-
-function sha256Encode($str, $key) {
-	return hash_hmac('sha256', $str, $key);
-}
-
-function base64Encode($str) {
-	return base64_encode($str);
-}
-
-function base64Decode($str) {
-	return base64_decode($str);
-}
-
-function debug($msg) {
-	echo "<pre>";
-	print_r($msg);
-	echo "</pre>";
-}
 
 
 ?>
