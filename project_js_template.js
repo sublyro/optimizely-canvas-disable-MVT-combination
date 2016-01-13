@@ -34,7 +34,7 @@ if (typeof DATA != 'undefined') {
     }
 
     function bucketMVT(obj) {
-      //if (document.cookie.indexOf(obj.id) == -1) {
+      if (document.cookie.indexOf(obj.id) == -1) {
         var ready = false;
         while (ready === false) {
           bucketVisitor(obj);
@@ -46,7 +46,7 @@ if (typeof DATA != 'undefined') {
             }
           }
         } 
-      //} // else user is already bucketed
+      } // else user is already bucketed
     }
 
     // disable specified MVT combinations for the given experiment
