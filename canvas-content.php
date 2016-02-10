@@ -199,10 +199,10 @@ if ($error_message != "") {
 
 <form id="mvt-app-form" method="POST">
 	<input type="hidden" name="action" id="action" value="save" />
-  	<?php foreach($all_experiments as $experiment){ ?>
+  	<?php foreach($all_experiments as $experiment){  ?>
     <div class="mvt-experiment">
       <div class="experiment-id" id="<?php echo $experiment->id ?>">
-        <h2><?php echo $experiment->description ?></h2></div>
+        <h2><?php echo $experiment->description ?> (<?php echo $experiment->status ?>)</h2></div>
       <ul class="input-list">
         <?php foreach($all_combinations[trim($experiment->id)] as $combination) { ?>
           <div class="combination">
