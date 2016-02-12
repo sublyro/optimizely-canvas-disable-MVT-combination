@@ -25,6 +25,7 @@
 		<ul class="sections list block-list"> 
 			<form id="disable-app" method="POST" action="index.php">
 				<input type="hidden" name="action" id="action"/>
+				<input type="hidden" name="signed_request" id="signed_request" value="<?php echo $canvas->get_signed_request(); ?>"/>
 				<li class="sections__item" data-test-section="integration-sidebar-on-off-section" id="disable-toggle"> <div class="button-group"> <button class="button enable <?php if ($canvas->is_enabled()) {echo('button--highlight');} ?>">On</button> <button class="button disable <?php if (!$canvas->is_enabled()) {echo('button--highlight');} ?>">Off</button> </div> </li>
 			</form>
 		</ul>

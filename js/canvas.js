@@ -3,13 +3,12 @@
 
 $( document ).ready(function() {
 
-
 $(".data-sidebar").on( "click", "button.enable", function(e) {
-  $("#disable-app input").val("enable");
+  $("#disable-app input:eq(0)").val("enable");
 });
 
 $(".data-sidebar").on( "click", "button.disable", function(e) {
-  $("#disable-app input").val("disable");
+  $("#disable-app input:eq(0)").val("disable");
 });
 
 

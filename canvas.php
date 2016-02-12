@@ -29,10 +29,15 @@ Class Canvas {
 
 	private $status = 1; 
 
+	private $signed_request;
+
 	public function __construct($config) {
 		$this->readConfig($config);
 		
-		$params = $_GET;
+		$params = array_merge($_GET, $_POST);
+
+		//debug($params);
+		//debug($_POST);
 
 		if (!array_key_exists('signed_request', $params)) {
 
@@ -45,21 +50,21 @@ Class Canvas {
 			}
 		} else {
 			// O-AUTH
-			$signed_request = $params['signed_request'];
+			$this->signed_request = $params['signed_request'];
 
-			if ($signed_request == null) {
+			if ($this->signed_request == null) {
 				$this->error("Error: Canvas signed_request parameter is missing");
 				exit();
 			}
-			$signed_request = explode(".", $signed_request);
+			$signed_request_new = explode(".", $this->signed_request);
 
-			if (count($signed_request) != 2) {
+			if (count($signed_request_new) != 2) {
 				$this->error("Error: Invalid Canvas signed_request parameter");
 				exit();
 			}
 		
 			// authorise the canvas app
-			if (!$this->authorize($signed_request)) {
+			if (!$this->authorize($signed_request_new)) {
 				$this->error("Error: The Canvas authentication failed. Please contact the App developer");
 				http_response_code(401);
 				exit();
@@ -184,6 +189,11 @@ Class Canvas {
 	public function get_optimizely() {
 		return $this->optimizely;
 	}
+
+	public function get_signed_request() {
+		return $this->signed_request;
+	}
+
 }
 
 //-----------------------------------

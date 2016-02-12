@@ -199,6 +199,7 @@ if ($error_message != "") {
 
 <form id="mvt-app-form" method="POST">
 	<input type="hidden" name="action" id="action" value="save" />
+	<input type="hidden" name="signed_request" id="signed_request" value="<?php echo $canvas->get_signed_request(); ?>"/>
   	<?php foreach($all_experiments as $experiment){  ?>
     <div class="mvt-experiment">
       <div class="experiment-id" id="<?php echo $experiment->id ?>">
