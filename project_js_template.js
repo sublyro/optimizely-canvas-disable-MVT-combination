@@ -123,7 +123,7 @@ if (typeof DATA != 'undefined') {
       };
       var level1 = ["or", advanced_js];
       var level2 = ["or", level1];
-      DATA.audiences[aid].conditions[2] = level2;
+      DATA.audiences[aid].conditions[DATA.audiences[aid].conditions.length] = level2;
     }
 
     /** 
